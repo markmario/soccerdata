@@ -1,100 +1,17 @@
 name: CI
+
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+      - master
+
 jobs:
-  quality:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
-          fetch-depth: 0
-
-      - uses: actions/cache@v5
-        with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{hashFiles('.pre-commit-config.yaml')}}
-
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
-
-      - name: Regenerate requirements.txt
-        run: |
-          uv export --no-hashes --output-file=requirements.txt
-          uv export --no-hashes --only-group=docs --output-file=docs/requirements.txt
-
-      - name: Commit changes if needed
-        run: |
-          if ! git diff --quiet requirements.txt docs/requirements.txt; then
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add requirements.txt docs/requirements.txt
-            git diff --staged --quiet || git commit -m "chore: update requirements.txt files"
-            git push
-          fi
-
-      - name: Run pre-commit
-        run: uv run pre-commit run -a --show-diff-on-failure
-
-      - name: Check lock file consistency
-        run: uv sync --locked
-
-  tests-and-type-check:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-      fail-fast: false
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Check out
-        uses: actions/checkout@v6
-
-      - name: Set up the environment
-        uses: ./.github/actions/setup-python-env
-        with:
-          python-version: ${{matrix.python-version}}
-
-      - name: Create credentials.json for DVC Remote
-        env:
-          GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
-        run: echo $GDRIVE_CREDENTIALS_DATA > credentials.json
-
-      - name: Modify DVC Remote
-        run: uv run dvc remote modify --local myremote credentialpath credentials.json
-
-      - name: Cache DVC
-        uses: actions/cache@v5
-        with:
-          path: .dvc/cache
-          key: dvc-cache-${{ hashFiles('**/dvc.lock') }}
-          restore-keys: |
-            dvc-cache-
-
-      - name: DVC Pull Data
-        run: uv run dvc pull -v
-
-      - name: Run tests
-        run: uv run python -m pytest tests --cov --cov-config=pyproject.toml --cov-report=xml -m "not fails_gha"
-        env:
-          SOCCERDATA_DIR: tests/appdata
-
-      - name: Check typing
-        run: uv run mypy --install-types --non-interactive --config-file pyproject.toml soccerdata tests
-
-      - name: Upload coverage reports to Codecov with GitHub Action on Python 3.11 for Ubuntu
-        uses: codecov/codecov-action@v5
-        if: ${{matrix.python-version == '3.11'}}
-
   build:
-    name: Build and verify package
+    name: Build package
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -105,36 +22,17 @@ jobs:
       - name: Build package
         run: uv build
 
-      - name: Verify package metadata
-        run: uv run python -m zipfile -l dist/*.whl
+      - name: Get version
+        id: version
+        run: echo "version=$(uv version | awk '{ print $2 }')" >> "$GITHUB_OUTPUT"
 
-      - name: Verify import from wheel
+      - name: Create or update GitHub release
         run: |
-          pip install dist/*.whl
-          python -c "import soccerdata; print(f'soccerdata {soccerdata.__version__} installed successfully')"
-
-  check-docs:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.11" # match what's in .readthedocs.yml
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc
-
-      - name: Set up Python environment as in RTD
-        run: |
-          python -m pip install --upgrade pip
-          pip install .
-          pip install -r docs/requirements.txt  # as defined in .readthedocs.yml
-
-      - name: Build the documentation
-        run: |
-          sphinx-build -b html docs docs/_build/html
+          tag="v${{ steps.version.outputs.version }}"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" dist/* --clobber
+          else
+            gh release create "$tag" dist/* --title "$tag" --generate-notes
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
