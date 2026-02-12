@@ -636,9 +636,9 @@ class BaseScrapingBeeReader(BaseReader):
                         )
                         if var_match:
                             try:
-                                payload = json.dumps(
-                                    json.loads(var_match.group(1))
-                                ).encode("utf-8")
+                                payload = json.dumps(json.loads(var_match.group(1))).encode(
+                                    "utf-8"
+                                )
                             except json.JSONDecodeError:
                                 payload = json.dumps(None).encode("utf-8")
                         else:

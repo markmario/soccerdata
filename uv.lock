@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <3.14"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -4964,6 +4964,18 @@ wheels = [
 ]
 
 [[package]]
+name = "scrapingbee"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8f/76/65afa7e4f025082a10d614e7a45d60c05025e160f3d28740221a68af8255/scrapingbee-2.0.2.tar.gz", hash = "sha256:312a2f2beab03eb687e568c3688533c44e543104eea82f18a4183f9ce1042e0f", size = 6149, upload-time = "2025-10-02T10:09:43.682Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/14/a0/ce8c66d302517432c76a4edb52599f8827cb3c3a38e7332fe4db2aaca3a9/scrapingbee-2.0.2-py3-none-any.whl", hash = "sha256:28d1c9b250917e45924d8a21cf7d55776c701d6d1c5283aabf3ef1911462a291", size = 5248, upload-time = "2025-10-02T10:09:42.374Z" },
+]
+
+[[package]]
 name = "seaborn"
 version = "0.13.2"
 source = { registry = "https://pypi.org/simple" }
@@ -5188,7 +5200,7 @@ wheels = [
 
 [[package]]
 name = "soccerdata"
-version = "1.8.7"
+version = "1.8.8"
 source = { editable = "." }
 dependencies = [
     { name = "html5lib" },
@@ -5203,6 +5215,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+scrapingbee = [
+    { name = "scrapingbee" },
+]
 socceraction = [
     { name = "socceraction" },
 ]
@@ -5244,6 +5259,7 @@ requires-dist = [
     { name = "lxml", marker = "python_full_version >= '3.13'", specifier = ">=5.0.0" },
     { name = "pandas", specifier = ">=2.0.0,!=2.1.0,<3.0.0" },
     { name = "rich", specifier = ">=14.0.0,<15.0.0" },
+    { name = "scrapingbee", marker = "extra == 'scrapingbee'", specifier = ">=2.0.0,<3.0.0" },
     { name = "seleniumbase", specifier = ">=4.38.2,<5.0.0" },
     { name = "socceraction", marker = "extra == 'socceraction'" },
     { name = "tqdm", specifier = ">=4.67.1,<5.0.0" },
@@ -5251,7 +5267,7 @@ requires-dist = [
     { name = "urllib3", specifier = "<2" },
     { name = "wrapper-tls-requests", specifier = ">=1.1.4,<2.0.0" },
 ]
-provides-extras = ["socceraction"]
+provides-extras = ["socceraction", "scrapingbee"]
 
 [package.metadata.requires-dev]
 docs = [
