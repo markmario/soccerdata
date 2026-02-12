@@ -254,7 +254,7 @@ def test_scrapingbee_import_error():
             BaseScrapingBeeReader(api_key="test-api-key")
 
 
-def test_scrapingbee_js_var_not_found(mock_scrapingbee_client):
+def test_scrapingbee_js_var_not_found(tmp_path, mock_scrapingbee_client):
     mock_instance, _ = mock_scrapingbee_client
     # Return page without the expected variable
     mock_resp = MagicMock()
@@ -265,10 +265,12 @@ def test_scrapingbee_js_var_not_found(mock_scrapingbee_client):
     mock_instance.get.return_value = mock_resp
 
     reader = BaseScrapingBeeReader(api_key="test-api-key")
-    data = reader.get("https://www.whoscored.com/", var="missingVar")
+    filepath = tmp_path / "test.json"
+    data = reader.get("https://www.whoscored.com/", filepath=filepath, var="missingVar")
 
     result = json.load(data)
     assert result is None
+    assert filepath.exists()
 
 
 # make_game_id

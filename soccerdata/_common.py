@@ -611,31 +611,38 @@ class BaseScrapingBeeReader(BaseReader):
                         f"window.__sd_result = JSON.stringify(typeof {var}"
                         f' !== "undefined" ? {var} : null)'
                     )
-                    params["extract_rules"] = json.dumps(
-                        {"result": "#__sd_result_container"}
-                    )
                 response = self._client.get(url, params=params)
                 time.sleep(self.rate_limit + random.random() * self.max_delay)
                 response.raise_for_status()
 
                 if var is not None:
-                    # Extract the JS variable from the rendered page
                     content = response.text
-                    # Try to find the variable value using a script-based approach
-                    # ScrapingBee returns the full rendered page; we parse the variable
-                    match = re.search(
-                        rf"(?:var\s+)?{re.escape(var)}\s*=\s*(.+?);\s*(?:\n|$)",
-                        content,
-                    )
+                    # First, try to extract from the js_snippet result
+                    match = re.search(r'window\.__sd_result\s*=\s*"(.+?)"', content)
                     if match:
                         try:
-                            payload = json.dumps(
-                                json.loads(match.group(1))
-                            ).encode("utf-8")
-                        except json.JSONDecodeError:
+                            payload = match.group(1).encode("utf-8")
+                            # Validate it's proper JSON
+                            json.loads(payload)
+                        except (json.JSONDecodeError, UnicodeDecodeError):
                             payload = json.dumps(None).encode("utf-8")
                     else:
-                        payload = json.dumps(None).encode("utf-8")
+                        # Fall back to parsing the variable assignment from page source
+                        # Use a greedy match anchored to end-of-statement for robustness
+                        var_match = re.search(
+                            rf"(?:var\s+)?{re.escape(var)}\s*=\s*(.+?)\s*;\s*\n",
+                            content,
+                            re.DOTALL,
+                        )
+                        if var_match:
+                            try:
+                                payload = json.dumps(
+                                    json.loads(var_match.group(1))
+                                ).encode("utf-8")
+                            except json.JSONDecodeError:
+                                payload = json.dumps(None).encode("utf-8")
+                        else:
+                            payload = json.dumps(None).encode("utf-8")
                 else:
                     payload = response.content
 
