@@ -90,6 +90,29 @@ jobs:
         uses: codecov/codecov-action@v5
         if: ${{matrix.python-version == '3.11'}}
 
+  build:
+    name: Build and verify package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+
+      - name: Set up the environment
+        uses: ./.github/actions/setup-python-env
+
+      - name: Build package
+        run: uv build
+
+      - name: Verify package metadata
+        run: uv run python -m zipfile -l dist/*.whl
+
+      - name: Verify import from wheel
+        run: |
+          pip install dist/*.whl
+          python -c "import soccerdata; print(f'soccerdata {soccerdata.__version__} installed successfully')"
+
   check-docs:
     runs-on: ubuntu-latest
     steps:
