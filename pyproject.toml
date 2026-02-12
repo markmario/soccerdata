@@ -42,6 +42,9 @@ dependencies = [
 socceraction = [
     "socceraction",
 ]
+scrapingbee = [
+    "scrapingbee>=2.0.0,<3.0.0",
+]
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ URLs ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ #
 [project.urls]
