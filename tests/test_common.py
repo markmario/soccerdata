@@ -11,6 +11,7 @@ import time_machine
 import soccerdata
 from soccerdata._common import (
     BaseRequestsReader,
+    BaseScrapingBeeReader,
     SeasonCode,
     add_alt_team_names,
     add_standardized_team_name,
@@ -173,6 +174,102 @@ def test_download_and_save_variable_no_store_no_filepath(mock_tls_client):
 #     assert ip_without_proxy["IP"] != ip_with_proxy["IP"]
 #     assert ip_with_proxy["IsTor"]
 #
+
+# BaseScrapingBeeReader
+
+
+@pytest.fixture
+def mock_scrapingbee_client():
+    with patch("scrapingbee.ScrapingBeeClient") as MockClient:
+        mock_instance = MagicMock()
+        MockClient.return_value = mock_instance
+
+        def _return_html(content="<html><body>Rank,Club,Country\n1,Barcelona,ESP</body></html>"):
+            mock_resp = MagicMock()
+            mock_resp.content = content.encode("utf-8")
+            mock_resp.text = content
+            mock_resp.status_code = 200
+            mock_resp.raise_for_status = lambda: None
+            mock_instance.get.return_value = mock_resp
+            return mock_instance
+
+        def _return_js_var(var_name="allRegions", data={"key": "value"}):
+            json_str = json.dumps(data)
+            html = f"<html><body><script>var {var_name} = {json_str};\n</script></body></html>"
+            mock_resp = MagicMock()
+            mock_resp.content = html.encode("utf-8")
+            mock_resp.text = html
+            mock_resp.status_code = 200
+            mock_resp.raise_for_status = lambda: None
+            mock_instance.get.return_value = mock_resp
+            return mock_instance
+
+        mock_instance.return_html = _return_html
+        mock_instance.return_js_var = _return_js_var
+        yield mock_instance, MockClient
+
+
+def test_scrapingbee_download_and_save(tmp_path, mock_scrapingbee_client):
+    mock_instance, MockClient = mock_scrapingbee_client
+    mock_instance.return_html("<html><body>Rank,Club\n1,Barcelona</body></html>")
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    url = "https://www.whoscored.com/"
+    filepath = tmp_path / "test.html"
+    data = reader.get(url, filepath)
+
+    assert data.read() == b"<html><body>Rank,Club\n1,Barcelona</body></html>"
+    assert filepath.exists()
+    MockClient.assert_called_once_with(api_key="test-api-key")
+
+
+def test_scrapingbee_download_js_variable(tmp_path, mock_scrapingbee_client):
+    mock_instance, _ = mock_scrapingbee_client
+    mock_instance.return_js_var(var_name="allRegions", data=[{"id": 1, "name": "England"}])
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    url = "https://www.whoscored.com/"
+    filepath = tmp_path / "test.json"
+    data = reader.get(url, filepath, var="allRegions")
+
+    result = json.load(data)
+    assert isinstance(result, list)
+    assert result[0]["name"] == "England"
+
+
+def test_scrapingbee_no_store(mock_scrapingbee_client):
+    mock_instance, _ = mock_scrapingbee_client
+    mock_instance.return_html("<html><body>test</body></html>")
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key", no_store=True)
+    url = "https://www.whoscored.com/"
+    data = reader.get(url, filepath=None)
+
+    assert data.read() == b"<html><body>test</body></html>"
+
+
+def test_scrapingbee_import_error():
+    with patch.dict("sys.modules", {"scrapingbee": None}):
+        with pytest.raises(ImportError, match="scrapingbee"):
+            BaseScrapingBeeReader(api_key="test-api-key")
+
+
+def test_scrapingbee_js_var_not_found(mock_scrapingbee_client):
+    mock_instance, _ = mock_scrapingbee_client
+    # Return page without the expected variable
+    mock_resp = MagicMock()
+    mock_resp.content = b"<html><body>no variable here</body></html>"
+    mock_resp.text = "<html><body>no variable here</body></html>"
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = lambda: None
+    mock_instance.get.return_value = mock_resp
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    data = reader.get("https://www.whoscored.com/", var="missingVar")
+
+    result = json.load(data)
+    assert result is None
+
 
 # make_game_id
 

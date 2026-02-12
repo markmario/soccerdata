@@ -534,6 +534,129 @@ class BaseRequestsReader(BaseReader):
         raise ConnectionError(f"Could not download {url}.")
 
 
+class BaseScrapingBeeReader(BaseReader):
+    """Base class for readers that use ScrapingBee.
+
+    Parameters
+    ----------
+    api_key : str
+        ScrapingBee API key.
+    leagues : str or list of str, optional
+        The leagues to read.
+    proxy : 'tor' or dict or list(dict) or callable, optional
+        Use a proxy to hide your IP address.
+    no_cache : bool
+        If True, will not use cached data.
+    no_store : bool
+        If True, will not store downloaded data.
+    data_dir : Path
+        Path to directory where data will be cached.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        leagues: Optional[Union[str, list[str]]] = None,
+        proxy: Optional[Union[str, list[str], Callable[[], str]]] = None,
+        no_cache: bool = False,
+        no_store: bool = False,
+        data_dir: Path = DATA_DIR,
+    ):
+        """Initialize the reader."""
+        super().__init__(
+            no_cache=no_cache,
+            no_store=no_store,
+            leagues=leagues,
+            proxy=proxy,
+            data_dir=data_dir,
+        )
+        try:
+            from scrapingbee import ScrapingBeeClient
+        except ImportError:
+            raise ImportError(
+                "The 'scrapingbee' package is required for this reader. "
+                "Install it with: pip install soccerdata[scrapingbee]"
+            )
+        self._client = ScrapingBeeClient(api_key=api_key)
+
+    def _download_and_save(
+        self,
+        url: str,
+        filepath: Optional[Path] = None,
+        var: Optional[Union[str, Iterable[str]]] = None,
+    ) -> IO[bytes]:
+        """Download file at url to filepath using ScrapingBee.
+
+        Parameters
+        ----------
+        url : str
+            URL to download.
+        filepath : Path, optional
+            Path to save downloaded file. If None, downloaded data is not cached.
+        var : str or list of str, optional
+            Return a JavaScript variable instead of the page source.
+
+        Returns
+        -------
+        io.BufferedIOBase
+            File-like object of downloaded data.
+        """
+        for i in range(5):
+            try:
+                params: dict = {"render_js": True}
+                if var is not None:
+                    if not isinstance(var, str):
+                        raise NotImplementedError("Only implemented for single variables.")
+                    params["js_snippet"] = (
+                        f"window.__sd_result = JSON.stringify(typeof {var}"
+                        f' !== "undefined" ? {var} : null)'
+                    )
+                    params["extract_rules"] = json.dumps(
+                        {"result": "#__sd_result_container"}
+                    )
+                response = self._client.get(url, params=params)
+                time.sleep(self.rate_limit + random.random() * self.max_delay)
+                response.raise_for_status()
+
+                if var is not None:
+                    # Extract the JS variable from the rendered page
+                    content = response.text
+                    # Try to find the variable value using a script-based approach
+                    # ScrapingBee returns the full rendered page; we parse the variable
+                    match = re.search(
+                        rf"(?:var\s+)?{re.escape(var)}\s*=\s*(.+?);\s*(?:\n|$)",
+                        content,
+                    )
+                    if match:
+                        try:
+                            payload = json.dumps(
+                                json.loads(match.group(1))
+                            ).encode("utf-8")
+                        except json.JSONDecodeError:
+                            payload = json.dumps(None).encode("utf-8")
+                    else:
+                        payload = json.dumps(None).encode("utf-8")
+                else:
+                    payload = response.content
+
+                if not self.no_store and filepath is not None:
+                    filepath.parent.mkdir(parents=True, exist_ok=True)
+                    with filepath.open(mode="wb") as fh:
+                        fh.write(payload)
+                return io.BytesIO(payload)
+            except Exception:
+                logger.exception(
+                    "Error while scraping %s. Retrying in %d seconds... (attempt %d of 5).",
+                    url,
+                    i * 10,
+                    i + 1,
+                )
+                time.sleep(i * 10)
+                continue
+
+        raise ConnectionError(f"Could not download {url}.")
+
+
 class BaseSeleniumReader(BaseReader):
     """Base class for readers that use Selenium."""
 
