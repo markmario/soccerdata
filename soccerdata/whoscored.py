@@ -859,7 +859,7 @@ class WhoScoredScrapingBee(WhoScoredMixin, BaseScrapingBeeReader):
     Data will be downloaded as necessary and cached locally in
     ``~/soccerdata/data/WhoScored``.
 
-    This implementation uses the ScrapingBee API for web scraping.
+    This new implementation uses the ScrapingBee API for web scraping.
 
     Parameters
     ----------
