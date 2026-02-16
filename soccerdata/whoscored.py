@@ -17,7 +17,12 @@ from selenium.common.exceptions import (
 )
 from selenium.webdriver.common.by import By
 
-from ._common import BaseSeleniumReader, make_game_id, standardize_colnames
+from ._common import (
+    BaseScrapingBeeReader,
+    BaseSeleniumReader,
+    make_game_id,
+    standardize_colnames,
+)
 from ._config import DATA_DIR, NOCACHE, NOSTORE, TEAMNAME_REPLACEMENTS, logger
 
 WHOSCORED_DATADIR = DATA_DIR / "WhoScored"
@@ -109,63 +114,29 @@ def _parse_url(url: str) -> dict:
     raise ValueError(f"Could not parse URL: {url}")
 
 
-class WhoScored(BaseSeleniumReader):
-    """Provides pd.DataFrames from data available at http://whoscored.com.
+class WhoScoredMixin:
+    """Mixin class containing shared WhoScored scraping logic.
 
-    Data will be downloaded as necessary and cached locally in
-    ``~/soccerdata/data/WhoScored``.
-
-    Parameters
-    ----------
-    leagues : string or iterable, optional
-        IDs of Leagues to include.
-    seasons : string, int or list, optional
-        Seasons to include. Supports multiple formats.
-        Examples: '16-17'; 2016; '2016-17'; [14, 15, 16]
-    proxy : 'tor' or or dict or list(dict) or callable, optional
-        Use a proxy to hide your IP address. Valid options are:
-            - "tor": Uses the Tor network. Tor should be running in
-              the background on port 9050.
-            - str: The address of the proxy server to use.
-            - list(str): A list of proxies to choose from. A different proxy will
-              be selected from this list after failed requests, allowing rotating
-              proxies.
-            - callable: A function that returns a valid proxy. This function will
-              be called after failed requests, allowing rotating proxies.
-    no_cache : bool
-        If True, will not use cached data.
-    no_store : bool
-        If True, will not store downloaded data.
-    data_dir : Path
-        Path to directory where data will be cached.
-    path_to_browser : Path, optional
-        Path to the Chrome executable.
-    headless : bool, default: True
-        If True, will run Chrome in headless mode. Setting this to False might
-        help to avoid getting blocked. Only supported for Selenium <4.13.
+    This mixin provides core scraping methods that work with both
+    Selenium and ScrapingBee implementations. It requires the base
+    class to provide the `self.get()` method.
     """
 
-    def __init__(
+    def _init_whoscored(
         self,
-        leagues: Optional[Union[str, list[str]]] = None,
         seasons: Optional[Union[str, int, Iterable[Union[str, int]]]] = None,
-        proxy: Optional[Union[str, list[str], Callable[[], str]]] = None,
-        no_cache: bool = NOCACHE,
-        no_store: bool = NOSTORE,
-        data_dir: Path = WHOSCORED_DATADIR,
-        path_to_browser: Optional[Path] = None,
-        headless: bool = False,
-    ):
-        """Initialize the WhoScored reader."""
-        super().__init__(
-            leagues=leagues,
-            proxy=proxy,
-            no_cache=no_cache,
-            no_store=no_store,
-            data_dir=data_dir,
-            path_to_browser=path_to_browser,
-            headless=headless,
-        )
+    ) -> None:
+        """Initialize WhoScored-specific attributes.
+
+        This helper method should be called from the subclass __init__ after
+        calling super().__init__().
+
+        Parameters
+        ----------
+        seasons : string, int or list, optional
+            Seasons to include. Supports multiple formats.
+            Examples: '16-17'; 2016; '2016-17'; [14, 15, 16]
+        """
         self.seasons = seasons
         self.rate_limit = 5
         self.max_delay = 5
@@ -439,42 +410,6 @@ class WhoScored(BaseSeleniumReader):
             .set_index(["league", "season", "game"])
             .sort_index()
         )
-
-    def _read_game_info(self, game_id: int) -> dict:
-        """Return game info available in the header."""
-        urlmask = WHOSCORED_URL + "/Matches/{}"
-        url = urlmask.format(game_id)
-        data = {}
-        self._driver.get(url)
-        # league and season
-        breadcrumb = self._driver.find_elements(
-            By.XPATH,
-            "//div[@id='breadcrumb-nav']/*[not(contains(@class, 'separator'))]",
-        )
-        country = breadcrumb[0].text
-        league, season = breadcrumb[1].text.split(" - ")
-        data["league"] = {v: k for k, v in self._all_leagues().items()}[f"{country} - {league}"]
-        data["season"] = self._season_code.parse(season)
-        # match header
-        match_header = self._driver.find_element(By.XPATH, "//div[@id='match-header']")
-        score_info = match_header.find_element(By.XPATH, ".//div[@class='teams-score-info']")
-        data["home_team"] = score_info.find_element(
-            By.XPATH, "./span[contains(@class,'home team')]"
-        ).text
-        data["result"] = score_info.find_element(
-            By.XPATH, "./span[contains(@class,'result')]"
-        ).text
-        data["away_team"] = score_info.find_element(
-            By.XPATH, "./span[contains(@class,'away team')]"
-        ).text
-        info_blocks = match_header.find_elements(By.XPATH, ".//div[@class='info-block cleared']")
-        for block in info_blocks:
-            for desc_list in block.find_elements(By.TAG_NAME, "dl"):
-                for desc_def in desc_list.find_elements(By.TAG_NAME, "dt"):
-                    desc_val = desc_def.find_element(By.XPATH, "./following-sibling::dd")
-                    data[desc_def.text] = desc_val.text
-
-        return data
 
     def read_missing_players(
         self,
@@ -808,6 +743,104 @@ class WhoScored(BaseSeleniumReader):
 
         return df
 
+
+class WhoScored(WhoScoredMixin, BaseSeleniumReader):
+    """Provides pd.DataFrames from data available at http://whoscored.com.
+
+    Data will be downloaded as necessary and cached locally in
+    ``~/soccerdata/data/WhoScored``.
+
+    This implementation uses Selenium with Chrome for web scraping.
+
+    Parameters
+    ----------
+    leagues : string or iterable, optional
+        IDs of Leagues to include.
+    seasons : string, int or list, optional
+        Seasons to include. Supports multiple formats.
+        Examples: '16-17'; 2016; '2016-17'; [14, 15, 16]
+    proxy : 'tor' or or dict or list(dict) or callable, optional
+        Use a proxy to hide your IP address. Valid options are:
+            - "tor": Uses the Tor network. Tor should be running in
+              the background on port 9050.
+            - str: The address of the proxy server to use.
+            - list(str): A list of proxies to choose from. A different proxy will
+              be selected from this list after failed requests, allowing rotating
+              proxies.
+            - callable: A function that returns a valid proxy. This function will
+              be called after failed requests, allowing rotating proxies.
+    no_cache : bool
+        If True, will not use cached data.
+    no_store : bool
+        If True, will not store downloaded data.
+    data_dir : Path
+        Path to directory where data will be cached.
+    path_to_browser : Path, optional
+        Path to the Chrome executable.
+    headless : bool, default: False
+        If True, will run Chrome in headless mode. Setting this to False might
+        help to avoid getting blocked. Only supported for Selenium <4.13.
+    """
+
+    def __init__(
+        self,
+        leagues: Optional[Union[str, list[str]]] = None,
+        seasons: Optional[Union[str, int, Iterable[Union[str, int]]]] = None,
+        proxy: Optional[Union[str, list[str], Callable[[], str]]] = None,
+        no_cache: bool = NOCACHE,
+        no_store: bool = NOSTORE,
+        data_dir: Path = WHOSCORED_DATADIR,
+        path_to_browser: Optional[Path] = None,
+        headless: bool = False,
+    ):
+        """Initialize the WhoScored reader."""
+        super().__init__(
+            leagues=leagues,
+            proxy=proxy,
+            no_cache=no_cache,
+            no_store=no_store,
+            data_dir=data_dir,
+            path_to_browser=path_to_browser,
+            headless=headless,
+        )
+        self._init_whoscored(seasons)
+
+    def _read_game_info(self, game_id: int) -> dict:
+        """Return game info available in the header."""
+        urlmask = WHOSCORED_URL + "/Matches/{}"
+        url = urlmask.format(game_id)
+        data = {}
+        self._driver.get(url)
+        # league and season
+        breadcrumb = self._driver.find_elements(
+            By.XPATH,
+            "//div[@id='breadcrumb-nav']/*[not(contains(@class, 'separator'))]",
+        )
+        country = breadcrumb[0].text
+        league, season = breadcrumb[1].text.split(" - ")
+        data["league"] = {v: k for k, v in self._all_leagues().items()}[f"{country} - {league}"]
+        data["season"] = self._season_code.parse(season)
+        # match header
+        match_header = self._driver.find_element(By.XPATH, "//div[@id='match-header']")
+        score_info = match_header.find_element(By.XPATH, ".//div[@class='teams-score-info']")
+        data["home_team"] = score_info.find_element(
+            By.XPATH, "./span[contains(@class,'home team')]"
+        ).text
+        data["result"] = score_info.find_element(
+            By.XPATH, "./span[contains(@class,'result')]"
+        ).text
+        data["away_team"] = score_info.find_element(
+            By.XPATH, "./span[contains(@class,'away team')]"
+        ).text
+        info_blocks = match_header.find_elements(By.XPATH, ".//div[@class='info-block cleared']")
+        for block in info_blocks:
+            for desc_list in block.find_elements(By.TAG_NAME, "dl"):
+                for desc_def in desc_list.find_elements(By.TAG_NAME, "dt"):
+                    desc_val = desc_def.find_element(By.XPATH, "./following-sibling::dd")
+                    data[desc_def.text] = desc_val.text
+
+        return data
+
     def _handle_banner(self) -> None:
         try:
             # self._driver.get(WHOSCORED_URL)
@@ -818,3 +851,60 @@ class WhoScored(BaseSeleniumReader):
             # with open("/tmp/error.html", "w") as f:
             # f.write(self._driver.page_source)
             raise ElementClickInterceptedException()
+
+
+class WhoScoredScrapingBee(WhoScoredMixin, BaseScrapingBeeReader):
+    """Provides pd.DataFrames from data available at http://whoscored.com.
+
+    Data will be downloaded as necessary and cached locally in
+    ``~/soccerdata/data/WhoScored``.
+
+    This implementation uses the ScrapingBee API for web scraping.
+
+    Parameters
+    ----------
+    api_key : str
+        ScrapingBee API key.
+    leagues : string or iterable, optional
+        IDs of Leagues to include.
+    seasons : string, int or list, optional
+        Seasons to include. Supports multiple formats.
+        Examples: '16-17'; 2016; '2016-17'; [14, 15, 16]
+    proxy : 'tor' or or dict or list(dict) or callable, optional
+        Use a proxy to hide your IP address. Valid options are:
+            - "tor": Uses the Tor network. Tor should be running in
+              the background on port 9050.
+            - str: The address of the proxy server to use.
+            - list(str): A list of proxies to choose from. A different proxy will
+              be selected from this list after failed requests, allowing rotating
+              proxies.
+            - callable: A function that returns a valid proxy. This function will
+              be called after failed requests, allowing rotating proxies.
+    no_cache : bool
+        If True, will not use cached data.
+    no_store : bool
+        If True, will not store downloaded data.
+    data_dir : Path
+        Path to directory where data will be cached.
+    """
+
+    def __init__(
+        self,
+        api_key: str,
+        leagues: Optional[Union[str, list[str]]] = None,
+        seasons: Optional[Union[str, int, Iterable[Union[str, int]]]] = None,
+        proxy: Optional[Union[str, list[str], Callable[[], str]]] = None,
+        no_cache: bool = NOCACHE,
+        no_store: bool = NOSTORE,
+        data_dir: Path = WHOSCORED_DATADIR,
+    ):
+        """Initialize the WhoScoredScrapingBee reader."""
+        super().__init__(
+            api_key=api_key,
+            leagues=leagues,
+            proxy=proxy,
+            no_cache=no_cache,
+            no_store=no_store,
+            data_dir=data_dir,
+        )
+        self._init_whoscored(seasons)
