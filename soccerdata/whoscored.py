@@ -423,7 +423,7 @@ class WhoScoredMixin:
         match_id : int or list of int, optional
             Retrieve the missing players for a specific game.
         force_cache : bool
-            By default no cached data is used to scrapre the list of available
+            By default no cached data is used to scrape the list of available
             games for the current season. If True, will force the use of
             cached data anyway.
 
@@ -537,7 +537,7 @@ class WhoScoredMixin:
             cached data anyway.
         live : bool
             If True, will not return a cached copy of the event data. This is
-            usefull to scrape live data.
+            useful to scrape live data.
         output_fmt : str, default: 'events'
             The output format of the returned data. Possible values are:
                 - 'events' (default): Returns a dataframe with all events.
@@ -557,7 +557,7 @@ class WhoScoredMixin:
             If no events were found for a game in a previous attempt, will
             retry to scrape the events
         on_error : "raise" or "skip", default: "raise"
-            Wheter to raise an exception or to skip the game if an error occurs.
+            Whether to raise an exception or to skip the game if an error occurs.
 
         Raises
         ------
