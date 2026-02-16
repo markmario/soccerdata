@@ -107,6 +107,7 @@ LEAGUE_DICT = {
         "SoFIFA": "[England] Premier League",
         "Understat": "EPL",
         "WhoScored": "England - Premier League",
+        "WhoScoredScrapingBee": "England - Premier League",
         "season_start": "Aug",
         "season_end": "May",
     },
@@ -165,6 +166,7 @@ LEAGUE_DICT = {
     "INT-World Cup": {
         "FBref": "FIFA World Cup",
         "WhoScored": "International - FIFA World Cup",
+        "WhoScoredScrapingBee": "International - FIFA World Cup",
         "season_code": "single-year",
     },
     "INT-European Championship": {
