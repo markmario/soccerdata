@@ -11,6 +11,7 @@ __all__ = [
     "Sofascore",
     "Understat",
     "WhoScored",
+    "WhoScoredScrapingBee",
 ]
 
 from .clubelo import ClubElo
@@ -20,4 +21,4 @@ from .match_history import MatchHistory
 from .sofascore import Sofascore
 from .sofifa import SoFIFA
 from .understat import Understat
-from .whoscored import WhoScored
+from .whoscored import WhoScored, WhoScoredScrapingBee
