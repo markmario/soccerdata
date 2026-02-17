@@ -414,6 +414,34 @@ def test_js_obj_to_json_escaped_quotes():
     assert parsed["c"] == 'say "hi"'
 
 
+def test_js_obj_to_json_with_js_expressions():
+    """Test handling of JavaScript expressions like new Date()."""
+    from soccerdata._common import _js_obj_to_json
+
+    # Test with new Date() expression - chompjs converts it to a string
+    js_with_date = """{
+        "fixtureDate": (new Date(2025, 4, 25, 0, 0, 0)).toString(),
+        "mask": {"2024": {"7": {"16": 1, "17": 1}}},
+        "stageId": 23400,
+        "isAggregate": false
+    }"""
+    result = _js_obj_to_json(js_with_date)
+    parsed = json.loads(result)
+
+    # The important part is that parsing doesn't crash and returns valid JSON
+    assert isinstance(parsed, dict)
+    assert "mask" in parsed
+    assert "stageId" in parsed
+    assert parsed["stageId"] == 23400
+    assert parsed["isAggregate"] is False
+    # fixtureDate should be present (chompjs handles the expression)
+    assert "fixtureDate" in parsed
+
+    # Test that the critical "mask" data structure is preserved correctly
+    assert parsed["mask"]["2024"]["7"]["16"] == 1
+    assert parsed["mask"]["2024"]["7"]["17"] == 1
+
+
 # make_game_id
 
 
