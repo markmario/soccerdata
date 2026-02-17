@@ -387,6 +387,33 @@ def test_js_obj_to_json_single_quotes():
     assert parsed["sortOrder"] == 0
 
 
+def test_js_obj_to_json_escaped_quotes():
+    """Test handling of escaped quotes within single-quoted strings."""
+    from soccerdata._common import _js_obj_to_json
+
+    # Test escaped single quote within single-quoted string
+    result = _js_obj_to_json(r"{name: 'it\'s working'}")
+    parsed = json.loads(result)
+    assert parsed["name"] == "it's working"
+
+    # Test double quotes within single-quoted string
+    result = _js_obj_to_json("""{msg: 'He said "hello"'}""")
+    parsed = json.loads(result)
+    assert parsed["msg"] == 'He said "hello"'
+
+    # Test apostrophe in double-quoted string (should not be affected)
+    result = _js_obj_to_json("""{text: "it's working"}""")
+    parsed = json.loads(result)
+    assert parsed["text"] == "it's working"
+
+    # Test complex mixed case
+    result = _js_obj_to_json(r"""{a: "don't", b: 'can\'t', c: 'say "hi"'}""")
+    parsed = json.loads(result)
+    assert parsed["a"] == "don't"
+    assert parsed["b"] == "can't"
+    assert parsed["c"] == 'say "hi"'
+
+
 # make_game_id
 
 

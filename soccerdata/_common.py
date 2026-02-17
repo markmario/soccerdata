@@ -53,8 +53,18 @@ def _js_obj_to_json(js_string: str) -> str:
     """
     # First, wrap unquoted property names in double quotes
     result = re.sub(r"(?<=[{,\s])(\w+)\s*:", r'"\1":', js_string)
+
     # Second, convert single-quoted strings to double-quoted strings
-    result = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", r'"\1"', result)
+    # Handle escaped quotes properly: unescape \' and escape "
+    def replace_single_quoted(match):
+        content = match.group(1)
+        # Unescape single quotes (JavaScript: \' becomes ')
+        content = content.replace("\\'", "'")
+        # Escape double quotes for JSON (JavaScript: " becomes \")
+        content = content.replace('"', '\\"')
+        return f'"{content}"'
+
+    result = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", replace_single_quoted, result)
     return result
 
 
