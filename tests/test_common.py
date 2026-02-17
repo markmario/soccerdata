@@ -324,6 +324,67 @@ def test_scrapingbee_js_var_nested_unquoted_keys(tmp_path, mock_scrapingbee_clie
     assert result["stats"]["goals"] == 10
 
 
+def test_scrapingbee_html_wrapped_json(tmp_path, mock_scrapingbee_client):
+    """Test that HTML-wrapped JSON responses are properly extracted.
+
+    ScrapingBee renders pages in a browser, so even raw JSON API endpoints
+    come back wrapped in <html><body>...</body></html>.
+    """
+    mock_instance, _ = mock_scrapingbee_client
+    # Simulate a JSON endpoint response wrapped in HTML
+    json_data = {"createdAt": "2026-02-17T03:57:45Z", "tournaments": [{"id": 1, "name": "Test"}]}
+    json_str = json.dumps(json_data)
+    html = f"<html><head></head><body>{json_str}</body></html>"
+    mock_resp = MagicMock()
+    mock_resp.content = html.encode("utf-8")
+    mock_resp.text = html
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = lambda: None
+    mock_instance.get.return_value = mock_resp
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    filepath = tmp_path / "test.json"
+    # When var is None, we're requesting raw content (not a JS variable)
+    data = reader.get("https://www.whoscored.com/api/endpoint", filepath=filepath, var=None)
+
+    # Should extract the JSON from the HTML body
+    result = json.load(data)
+    assert result["createdAt"] == "2026-02-17T03:57:45Z"
+    assert result["tournaments"][0]["name"] == "Test"
+    assert filepath.exists()
+
+    # Verify the cached file contains pure JSON, not HTML-wrapped
+    with filepath.open("rb") as f:
+        cached_content = f.read()
+    cached_json = json.loads(cached_content)
+    assert cached_json == json_data
+
+
+def test_scrapingbee_plain_json(tmp_path, mock_scrapingbee_client):
+    """Test that plain JSON (without HTML wrapping) still works.
+
+    This ensures our HTML-stripping logic doesn't break cases where
+    ScrapingBee returns plain JSON directly.
+    """
+    mock_instance, _ = mock_scrapingbee_client
+    json_data = {"id": 123, "status": "active"}
+    json_str = json.dumps(json_data)
+    mock_resp = MagicMock()
+    mock_resp.content = json_str.encode("utf-8")
+    mock_resp.text = json_str
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = lambda: None
+    mock_instance.get.return_value = mock_resp
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    filepath = tmp_path / "test.json"
+    data = reader.get("https://api.example.com/data", filepath=filepath, var=None)
+
+    result = json.load(data)
+    assert result["id"] == 123
+    assert result["status"] == "active"
+
+
 def test_js_obj_to_json_helper():
     """Test the _js_obj_to_json helper function directly."""
     from soccerdata._common import _js_obj_to_json
