@@ -23,6 +23,29 @@ from selenium.common.exceptions import JavascriptException, WebDriverException
 from ._config import DATA_DIR, LEAGUE_DICT, MAXAGE, TEAMNAME_REPLACEMENTS, logger
 
 
+def _js_obj_to_json(js_string: str) -> str:
+    """Convert JavaScript object literal syntax to valid JSON.
+
+    Wraps unquoted property names in double quotes to make them JSON-compliant.
+
+    Parameters
+    ----------
+    js_string : str
+        JavaScript string that may contain object literals with unquoted keys.
+
+    Returns
+    -------
+    str
+        JSON-compliant string with all property names quoted.
+
+    Examples
+    --------
+    >>> _js_obj_to_json('{id: 123, name: "Arsenal"}')
+    '{"id": 123, "name": "Arsenal"}'
+    """
+    return re.sub(r"(?<=[{,\s])(\w+)\s*:", r'"\1":', js_string)
+
+
 class SeasonCode(Enum):
     """How to interpret season codes.
 
@@ -636,10 +659,13 @@ class BaseScrapingBeeReader(BaseReader):
                         )
                         if var_match:
                             try:
-                                payload = json.dumps(
-                                    json.loads(var_match.group(1))
-                                ).encode("utf-8")
-                            except json.JSONDecodeError:
+                                raw = var_match.group(1)
+                                try:
+                                    parsed = json.loads(raw)
+                                except json.JSONDecodeError:
+                                    parsed = json.loads(_js_obj_to_json(raw))
+                                payload = json.dumps(parsed).encode("utf-8")
+                            except (json.JSONDecodeError, UnicodeDecodeError):
                                 payload = json.dumps(None).encode("utf-8")
                         else:
                             payload = json.dumps(None).encode("utf-8")
