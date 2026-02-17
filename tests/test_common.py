@@ -341,6 +341,79 @@ def test_js_obj_to_json_helper():
     assert _js_obj_to_json('{"id": 123}') == '{"id": 123}'
 
 
+def test_js_obj_to_json_single_quotes():
+    """Test that single-quoted string values are converted to double quotes."""
+    from soccerdata._common import _js_obj_to_json
+
+    # Test single-quoted string values
+    assert _js_obj_to_json("{id: 123, name: 'Arsenal'}") == '{"id": 123, "name": "Arsenal"}'
+
+    # Test multiple single-quoted strings
+    assert (
+        _js_obj_to_json("{id: 123, name: 'Arsenal', city: 'London'}")
+        == '{"id": 123, "name": "Arsenal", "city": "London"}'
+    )
+
+    # Test mixed single and double quotes
+    assert (
+        _js_obj_to_json("{id: 1, name: \"Arsenal\", city: 'London'}")
+        == '{"id": 1, "name": "Arsenal", "city": "London"}'
+    )
+
+    # Test nested objects with single quotes
+    assert _js_obj_to_json("{id: 1, obj: {key: 'value'}}") == '{"id": 1, "obj": {"key": "value"}}'
+
+    # Test single-quoted strings with special characters (like URLs)
+    assert (
+        _js_obj_to_json("{url: '/regions/248/tournaments/762/test'}")
+        == '{"url": "/regions/248/tournaments/762/test"}'
+    )
+
+    # Test the user's example case
+    input_str = """{
+    "id": 762,
+    "url":'/regions/248/tournaments/762/africa-caf-champions-league-qualification',
+    "name":'CAF Champions League Qualification',
+    "sortOrder": 0
+}"""
+    result = _js_obj_to_json(input_str)
+    # Verify it's valid JSON by parsing it
+    parsed = json.loads(result)
+    assert parsed["id"] == 762
+    assert (
+        parsed["url"] == "/regions/248/tournaments/762/africa-caf-champions-league-qualification"
+    )
+    assert parsed["name"] == "CAF Champions League Qualification"
+    assert parsed["sortOrder"] == 0
+
+
+def test_js_obj_to_json_escaped_quotes():
+    """Test handling of escaped quotes within single-quoted strings."""
+    from soccerdata._common import _js_obj_to_json
+
+    # Test escaped single quote within single-quoted string
+    result = _js_obj_to_json(r"{name: 'it\'s working'}")
+    parsed = json.loads(result)
+    assert parsed["name"] == "it's working"
+
+    # Test double quotes within single-quoted string
+    result = _js_obj_to_json("""{msg: 'He said "hello"'}""")
+    parsed = json.loads(result)
+    assert parsed["msg"] == 'He said "hello"'
+
+    # Test apostrophe in double-quoted string (should not be affected)
+    result = _js_obj_to_json("""{text: "it's working"}""")
+    parsed = json.loads(result)
+    assert parsed["text"] == "it's working"
+
+    # Test complex mixed case
+    result = _js_obj_to_json(r"""{a: "don't", b: 'can\'t', c: 'say "hi"'}""")
+    parsed = json.loads(result)
+    assert parsed["a"] == "don't"
+    assert parsed["b"] == "can't"
+    assert parsed["c"] == 'say "hi"'
+
+
 # make_game_id
 
 
