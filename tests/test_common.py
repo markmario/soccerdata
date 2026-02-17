@@ -273,6 +273,74 @@ def test_scrapingbee_js_var_not_found(tmp_path, mock_scrapingbee_client):
     assert filepath.exists()
 
 
+def test_scrapingbee_js_var_unquoted_keys(tmp_path, mock_scrapingbee_client):
+    """Test that unquoted JavaScript object keys are properly converted to JSON."""
+    mock_instance, _ = mock_scrapingbee_client
+    # Return page with JS object literal (unquoted keys)
+    js_content = 'var teamData = {id: 123, name: "Arsenal", wins: 25};\n'
+    html = f"<html><body><script>{js_content}</script></body></html>"
+    mock_resp = MagicMock()
+    mock_resp.content = html.encode("utf-8")
+    mock_resp.text = html
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = lambda: None
+    mock_instance.get.return_value = mock_resp
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    filepath = tmp_path / "test.json"
+    data = reader.get("https://www.whoscored.com/", filepath=filepath, var="teamData")
+
+    result = json.load(data)
+    assert isinstance(result, dict)
+    assert result["id"] == 123
+    assert result["name"] == "Arsenal"
+    assert result["wins"] == 25
+
+
+def test_scrapingbee_js_var_nested_unquoted_keys(tmp_path, mock_scrapingbee_client):
+    """Test that nested unquoted JavaScript object keys are properly converted."""
+    mock_instance, _ = mock_scrapingbee_client
+    # Return page with nested JS object literal (unquoted keys)
+    js_content = (
+        'var playerData = {id: 10, player: {name: "Messi", age: 36}, stats: {goals: 10}};\n'
+    )
+    html = f"<html><body><script>{js_content}</script></body></html>"
+    mock_resp = MagicMock()
+    mock_resp.content = html.encode("utf-8")
+    mock_resp.text = html
+    mock_resp.status_code = 200
+    mock_resp.raise_for_status = lambda: None
+    mock_instance.get.return_value = mock_resp
+
+    reader = BaseScrapingBeeReader(api_key="test-api-key")
+    filepath = tmp_path / "test.json"
+    data = reader.get("https://www.whoscored.com/", filepath=filepath, var="playerData")
+
+    result = json.load(data)
+    assert isinstance(result, dict)
+    assert result["id"] == 10
+    assert result["player"]["name"] == "Messi"
+    assert result["player"]["age"] == 36
+    assert result["stats"]["goals"] == 10
+
+
+def test_js_obj_to_json_helper():
+    """Test the _js_obj_to_json helper function directly."""
+    from soccerdata._common import _js_obj_to_json
+
+    # Test simple object
+    assert _js_obj_to_json("{id: 123}") == '{"id": 123}'
+
+    # Test multiple properties
+    assert _js_obj_to_json('{id: 123, name: "test"}') == '{"id": 123, "name": "test"}'
+
+    # Test nested objects
+    assert _js_obj_to_json('{id: 1, obj: {key: "value"}}') == '{"id": 1, "obj": {"key": "value"}}'
+
+    # Test already quoted keys (should still work)
+    assert _js_obj_to_json('{"id": 123}') == '{"id": 123}'
+
+
 # make_game_id
 
 
