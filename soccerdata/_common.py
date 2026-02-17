@@ -673,7 +673,25 @@ class BaseScrapingBeeReader(BaseReader):
                         else:
                             payload = json.dumps(None).encode("utf-8")
                 else:
+                    # ScrapingBee renders pages in a browser, so even raw JSON
+                    # endpoints come back wrapped in <html><body>...</body></html>.
+                    # Try to extract the body content if the response looks like HTML
+                    # and the body contains JSON.
                     payload = response.content
+                    if payload.lstrip().startswith(b"<"):
+                        text = response.text
+                        body_match = re.search(r"<body[^>]*>(.*)</body>", text, re.DOTALL)
+                        if body_match:
+                            body_content = body_match.group(1).strip()
+                            # Only extract body if it looks like JSON
+                            if body_content.startswith(("{", "[")):
+                                try:
+                                    # Validate it's proper JSON
+                                    json.loads(body_content)
+                                    payload = body_content.encode("utf-8")
+                                except (json.JSONDecodeError, ValueError):
+                                    # Not valid JSON, keep the full HTML
+                                    pass
 
                 if not self.no_store and filepath is not None:
                     filepath.parent.mkdir(parents=True, exist_ok=True)
