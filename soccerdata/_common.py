@@ -27,6 +27,10 @@ def _js_obj_to_json(js_string: str) -> str:
     """Convert JavaScript object literal syntax to valid JSON.
 
     Wraps unquoted property names in double quotes to make them JSON-compliant.
+    This is a simple regex-based approach that handles typical JavaScript variable
+    assignments. It may not handle all edge cases (e.g., patterns like 'word:' within
+    string values), but is sufficient for the common use case of parsing JavaScript
+    object literals from scraped web pages.
 
     Parameters
     ----------
