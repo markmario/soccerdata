@@ -356,15 +356,12 @@ def test_js_obj_to_json_single_quotes():
 
     # Test mixed single and double quotes
     assert (
-        _js_obj_to_json('{id: 1, name: "Arsenal", city: \'London\'}')
+        _js_obj_to_json("{id: 1, name: \"Arsenal\", city: 'London'}")
         == '{"id": 1, "name": "Arsenal", "city": "London"}'
     )
 
     # Test nested objects with single quotes
-    assert (
-        _js_obj_to_json("{id: 1, obj: {key: 'value'}}")
-        == '{"id": 1, "obj": {"key": "value"}}'
-    )
+    assert _js_obj_to_json("{id: 1, obj: {key: 'value'}}") == '{"id": 1, "obj": {"key": "value"}}'
 
     # Test single-quoted strings with special characters (like URLs)
     assert (
@@ -373,17 +370,19 @@ def test_js_obj_to_json_single_quotes():
     )
 
     # Test the user's example case
-    input_str = '''{
+    input_str = """{
     "id": 762,
     "url":'/regions/248/tournaments/762/africa-caf-champions-league-qualification',
     "name":'CAF Champions League Qualification',
     "sortOrder": 0
-}'''
+}"""
     result = _js_obj_to_json(input_str)
     # Verify it's valid JSON by parsing it
     parsed = json.loads(result)
     assert parsed["id"] == 762
-    assert parsed["url"] == "/regions/248/tournaments/762/africa-caf-champions-league-qualification"
+    assert (
+        parsed["url"] == "/regions/248/tournaments/762/africa-caf-champions-league-qualification"
+    )
     assert parsed["name"] == "CAF Champions League Qualification"
     assert parsed["sortOrder"] == 0
 
