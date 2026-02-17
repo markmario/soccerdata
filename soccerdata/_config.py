@@ -121,6 +121,7 @@ LEAGUE_DICT = {
         "SoFIFA": "[Spain] La Liga",
         "Understat": "La liga",
         "WhoScored": "Spain - LaLiga",
+        "WhoScoredScrapingBee": "Spain - LaLiga",
         "season_start": "Aug",
         "season_end": "May",
     },
@@ -134,6 +135,7 @@ LEAGUE_DICT = {
         "SoFIFA": "[Italy] Serie A",
         "Understat": "Serie A",
         "WhoScored": "Italy - Serie A",
+        "WhoScoredScrapingBee": "Italy - Serie A",
         "season_start": "Aug",
         "season_end": "May",
     },
@@ -147,6 +149,7 @@ LEAGUE_DICT = {
         "SoFIFA": "[Germany] Bundesliga",
         "Understat": "Bundesliga",
         "WhoScored": "Germany - Bundesliga",
+        "WhoScoredScrapingBee": "Germany - Bundesliga",
         "season_start": "Aug",
         "season_end": "May",
     },
@@ -160,6 +163,7 @@ LEAGUE_DICT = {
         "SoFIFA": "[France] Ligue 1",
         "Understat": "Ligue 1",
         "WhoScored": "France - Ligue 1",
+        "WhoScoredScrapingBee": "France - Ligue 1",
         "season_start": "Aug",
         "season_end": "May",
     },
@@ -173,6 +177,7 @@ LEAGUE_DICT = {
         "FBref": "UEFA European Football Championship",
         "Sofascore": "EURO",
         "WhoScored": "International - European Championship",
+        "WhoScoredScrapingBee": "International - European Championship",
         "season_start": "Jun",
         "season_end": "Jul",
         "season_code": "single-year",
@@ -180,7 +185,136 @@ LEAGUE_DICT = {
     "INT-Women's World Cup": {
         "FBref": "FIFA Women's World Cup",
         "WhoScored": "International - FIFA Women's World Cup",
+        "WhoScoredScrapingBee": "International - FIFA Women's World Cup",
         "season_code": "single-year",
+    },
+    "INT-Africa Cup of Nations U20": {
+        "WhoScored": "International - Africa Cup of Nations U20",
+        "WhoScoredScrapingBee": "International - Africa Cup of Nations U20",
+    },
+    "INT-EURO U-17": {
+        "WhoScored": "International - EURO U-17",
+        "WhoScoredScrapingBee": "International - EURO U-17",
+    },
+    "INT-Friendly U-21": {
+        "WhoScored": "International - Friendly U-21",
+        "WhoScoredScrapingBee": "International - Friendly U-21",
+    },
+    "INT-World Championship U-17": {
+        "WhoScored": "International - World Championship U-17",
+        "WhoScoredScrapingBee": "International - World Championship U-17",
+    },
+    "INT-Confederations Cup": {
+        "WhoScored": "International - Confederations Cup",
+        "WhoScoredScrapingBee": "International - Confederations Cup",
+    },
+    "INT-Club Friendlies": {
+        "WhoScored": "International - Club Friendlies",
+        "WhoScoredScrapingBee": "International - Club Friendlies",
+    },
+    "INT-EURO U-19": {
+        "WhoScored": "International - EURO U-19",
+        "WhoScoredScrapingBee": "International - EURO U-19",
+    },
+    "INT-Int. Friendly": {
+        "WhoScored": "International - Int. Friendly",
+        "WhoScoredScrapingBee": "International - Int. Friendly",
+    },
+    "INT-Summer Olympics": {
+        "WhoScored": "International - Summer Olympics",
+        "WhoScoredScrapingBee": "International - Summer Olympics",
+    },
+    "INT-Toulon Tournament": {
+        "WhoScored": "International - Toulon Tournament",
+        "WhoScoredScrapingBee": "International - Toulon Tournament",
+    },
+    "INT-World Championship U-20": {
+        "WhoScored": "International - World Championship U-20",
+        "WhoScoredScrapingBee": "International - World Championship U-20",
+    },
+    "INT-FIFA Club World Cup": {
+        "WhoScored": "International - FIFA Club World Cup",
+        "WhoScoredScrapingBee": "International - FIFA Club World Cup",
+    },
+    "INT-Asian Cup": {
+        "WhoScored": "International - Asian Cup",
+        "WhoScoredScrapingBee": "International - Asian Cup",
+    },
+    "INT-EURO U-21": {
+        "WhoScored": "International - EURO U-21",
+        "WhoScoredScrapingBee": "International - EURO U-21",
+    },
+    "INT-World Cup Qualification AFC": {
+        "WhoScored": "International - World Cup Qualification AFC",
+        "WhoScoredScrapingBee": "International - World Cup Qualification AFC",
+    },
+    "INT-World Cup Qualification CONCACAF": {
+        "WhoScored": "International - World Cup Qualification CONCACAF",
+        "WhoScoredScrapingBee": "International - World Cup Qualification CONCACAF",
+    },
+    "INT-World Cup Qualification CAF": {
+        "WhoScored": "International - World Cup Qualification CAF",
+        "WhoScoredScrapingBee": "International - World Cup Qualification CAF",
+    },
+    "INT-World Cup Qualification CONMEBOL": {
+        "WhoScored": "International - World Cup Qualification CONMEBOL",
+        "WhoScoredScrapingBee": "International - World Cup Qualification CONMEBOL",
+    },
+    "INT-World Cup Qualification UEFA": {
+        "WhoScored": "International - World Cup Qualification UEFA",
+        "WhoScoredScrapingBee": "International - World Cup Qualification UEFA",
+    },
+    "INT-Africa Cup of Nations": {
+        "WhoScored": "International - Africa Cup of Nations",
+        "WhoScoredScrapingBee": "International - Africa Cup of Nations",
+    },
+    "INT-Copa America": {
+        "WhoScored": "International - Copa America",
+        "WhoScoredScrapingBee": "International - Copa America",
+    },
+    "INT-EURO U21 Qualification": {
+        "WhoScored": "International - EURO U21 Qualification",
+        "WhoScoredScrapingBee": "International - EURO U21 Qualification",
+    },
+    "INT-OFC U19 Championship": {
+        "WhoScored": "International - OFC U19 Championship",
+        "WhoScoredScrapingBee": "International - OFC U19 Championship",
+    },
+    "INT-African Nations Championship": {
+        "WhoScored": "International - African Nations Championship",
+        "WhoScoredScrapingBee": "International - African Nations Championship",
+    },
+    "INT-CONCACAF Nations League": {
+        "WhoScored": "International - CONCACAF Nations League",
+        "WhoScoredScrapingBee": "International - CONCACAF Nations League",
+    },
+    "INT-UEFA Nations League B Qualification": {
+        "WhoScored": "International - UEFA Nations League B Qualification",
+        "WhoScoredScrapingBee": "International - UEFA Nations League B Qualification",
+    },
+    "INT-UEFA Nations League A Qualification": {
+        "WhoScored": "International - UEFA Nations League A Qualification",
+        "WhoScoredScrapingBee": "International - UEFA Nations League A Qualification",
+    },
+    "INT-UEFA Nations League D": {
+        "WhoScored": "International - UEFA Nations League D",
+        "WhoScoredScrapingBee": "International - UEFA Nations League D",
+    },
+    "INT-UEFA Nations League C": {
+        "WhoScored": "International - UEFA Nations League C",
+        "WhoScoredScrapingBee": "International - UEFA Nations League C",
+    },
+    "INT-UEFA Nations League B": {
+        "WhoScored": "International - UEFA Nations League B",
+        "WhoScoredScrapingBee": "International - UEFA Nations League B",
+    },
+    "INT-UEFA Nations League A": {
+        "WhoScored": "International - UEFA Nations League A",
+        "WhoScoredScrapingBee": "International - UEFA Nations League A",
+    },
+    "INT-UEFA Women's EURO": {
+        "WhoScored": "International - UEFA Women's EURO",
+        "WhoScoredScrapingBee": "International - UEFA Women's EURO",
     },
 }
 _f_custom_league_dict = CONFIG_DIR / "league_dict.json"
