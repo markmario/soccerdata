@@ -642,7 +642,7 @@ class WhoScoredMixin:
                     reader = self.get(
                         url,
                         filepath,
-                        var="require.config.params['args'].matchCentreData",
+                        var='require.config.params["args"]',
                         no_cache=True,
                     )
             except ConnectionError as e:
@@ -651,7 +651,7 @@ class WhoScoredMixin:
                     continue
                 raise
             reader.seek(0)
-            json_data = json.load(reader)
+            json_data = json.load(reader)["matchCentreData"]
             if json_data is not None:
                 player_names.update(
                     {int(k): v for k, v in json_data["playerIdNameDictionary"].items()}
