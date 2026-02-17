@@ -10,7 +10,7 @@ from collections.abc import Iterable
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from pathlib import Path
-from typing import IO, Callable, Optional, Union
+from typing import IO, Any, Callable, Optional, Union
 
 import chompjs
 import numpy as np
@@ -49,7 +49,7 @@ def _js_obj_to_json(js_string: str) -> str:
     >>> _js_obj_to_json("{id: 123, name: 'Arsenal'}")
     '{"id": 123, "name": "Arsenal"}'
     """
-    parsed = chompjs.parse_js_object(js_string)
+    parsed: Any = chompjs.parse_js_object(js_string)
     return json.dumps(parsed)
 
 
@@ -666,7 +666,7 @@ class BaseScrapingBeeReader(BaseReader):
                         if var_match:
                             try:
                                 raw = var_match.group(1)
-                                parsed = chompjs.parse_js_object(raw)
+                                parsed: Any = chompjs.parse_js_object(raw)
                                 payload = json.dumps(parsed).encode("utf-8")
                             except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
                                 payload = json.dumps(None).encode("utf-8")

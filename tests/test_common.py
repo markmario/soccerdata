@@ -427,7 +427,7 @@ def test_js_obj_to_json_with_js_expressions():
     }"""
     result = _js_obj_to_json(js_with_date)
     parsed = json.loads(result)
-    
+
     # The important part is that parsing doesn't crash and returns valid JSON
     assert isinstance(parsed, dict)
     assert "mask" in parsed
@@ -436,7 +436,7 @@ def test_js_obj_to_json_with_js_expressions():
     assert parsed["isAggregate"] is False
     # fixtureDate should be present (chompjs handles the expression)
     assert "fixtureDate" in parsed
-    
+
     # Test that the critical "mask" data structure is preserved correctly
     assert parsed["mask"]["2024"]["7"]["16"] == 1
     assert parsed["mask"]["2024"]["7"]["17"] == 1
