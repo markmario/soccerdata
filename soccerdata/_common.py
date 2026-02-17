@@ -12,6 +12,7 @@ from enum import Enum
 from pathlib import Path
 from typing import IO, Callable, Optional, Union
 
+import chompjs
 import numpy as np
 import pandas as pd
 import seleniumbase as sb
@@ -26,23 +27,20 @@ from ._config import DATA_DIR, LEAGUE_DICT, MAXAGE, TEAMNAME_REPLACEMENTS, logge
 def _js_obj_to_json(js_string: str) -> str:
     """Convert JavaScript object literal syntax to valid JSON.
 
-    Wraps unquoted property names in double quotes and converts single-quoted
-    string values to double quotes to make them JSON-compliant.
-    This is a simple regex-based approach that handles typical JavaScript variable
-    assignments. It may not handle all edge cases (e.g., patterns like 'word:' within
-    string values), but is sufficient for the common use case of parsing JavaScript
-    object literals from scraped web pages.
+    Uses chompjs's C-based state machine lexer to handle JS object literals
+    including unquoted keys, single-quoted strings, trailing commas, and
+    unrecognized expressions like `new Date(...)` (which are preserved as
+    strings in the output).
 
     Parameters
     ----------
     js_string : str
-        JavaScript string that may contain object literals with unquoted keys
-        and/or single-quoted string values.
+        JavaScript string that may contain object literals with non-JSON syntax.
 
     Returns
     -------
     str
-        JSON-compliant string with all property names and string values properly quoted.
+        JSON-compliant string.
 
     Examples
     --------
@@ -51,25 +49,8 @@ def _js_obj_to_json(js_string: str) -> str:
     >>> _js_obj_to_json("{id: 123, name: 'Arsenal'}")
     '{"id": 123, "name": "Arsenal"}'
     """
-    # First, wrap unquoted property names in double quotes
-    result = re.sub(r"(?<=[{,\s])(\w+)\s*:", r'"\1":', js_string)
-
-    # Second, convert single-quoted strings to double-quoted strings
-    # Handle escaped quotes properly: unescape \' and escape "
-    def replace_single_quoted(match):
-        content = match.group(1)
-        # Unescape single quotes (JavaScript: \' becomes ')
-        content = content.replace("\\'", "'")
-        # Escape double quotes for JSON (JavaScript: " becomes \")
-        content = content.replace('"', '\\"')
-        return f'"{content}"'
-
-    # Regex pattern matches single-quoted strings, including those with escaped characters:
-    # '[^'\\]*' matches a string with no quotes or backslashes
-    # '(?:\\.[^'\\]*)*' matches zero or more occurrences of an escaped char followed by more content
-    # This correctly handles cases like 'it\'s' and 'say "hi"'
-    result = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", replace_single_quoted, result)
-    return result
+    parsed = chompjs.parse_js_object(js_string)
+    return json.dumps(parsed)
 
 
 class SeasonCode(Enum):
@@ -677,7 +658,6 @@ class BaseScrapingBeeReader(BaseReader):
                             payload = json.dumps(None).encode("utf-8")
                     else:
                         # Fall back to parsing the variable assignment from page source
-                        # Use a greedy match anchored to end-of-statement for robustness
                         var_match = re.search(
                             rf"(?:var\s+)?{re.escape(var)}\s*=\s*(.+?)\s*;\s*\n",
                             content,
@@ -686,12 +666,9 @@ class BaseScrapingBeeReader(BaseReader):
                         if var_match:
                             try:
                                 raw = var_match.group(1)
-                                try:
-                                    parsed = json.loads(raw)
-                                except json.JSONDecodeError:
-                                    parsed = json.loads(_js_obj_to_json(raw))
+                                parsed = chompjs.parse_js_object(raw)
                                 payload = json.dumps(parsed).encode("utf-8")
-                            except (json.JSONDecodeError, UnicodeDecodeError):
+                            except (ValueError, json.JSONDecodeError, UnicodeDecodeError):
                                 payload = json.dumps(None).encode("utf-8")
                         else:
                             payload = json.dumps(None).encode("utf-8")
