@@ -64,6 +64,10 @@ def _js_obj_to_json(js_string: str) -> str:
         content = content.replace('"', '\\"')
         return f'"{content}"'
 
+    # Regex pattern matches single-quoted strings, including those with escaped characters:
+    # '[^'\\]*' matches a string with no quotes or backslashes
+    # '(?:\\.[^'\\]*)*' matches zero or more occurrences of an escaped char followed by more content
+    # This correctly handles cases like 'it\'s' and 'say "hi"'
     result = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", replace_single_quoted, result)
     return result
 
