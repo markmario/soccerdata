@@ -634,7 +634,7 @@ class WhoScoredMixin:
                 reader = self.get(
                     url,
                     filepath,
-                    var="require.config.params['args'].matchCentreData",
+                    var='require.config.params["args"]',
                     no_cache=live,
                 )
                 reader_value = reader.read()
