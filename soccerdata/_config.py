@@ -20,12 +20,10 @@ LOGLEVEL = os.environ.get("SOCCERDATA_LOGLEVEL", "INFO").upper()
 
 # Directories
 BASE_DIR = Path(os.environ.get("SOCCERDATA_DIR", Path.home() / "soccerdata"))
-LOGS_DIR = Path(BASE_DIR, "logs")
 DATA_DIR = Path(BASE_DIR, "data")
 CONFIG_DIR = Path(BASE_DIR, "config")
 
 # Create dirs
-LOGS_DIR.mkdir(parents=True, exist_ok=True)
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -47,18 +45,14 @@ logging_config = {
             "level": logging.DEBUG,
         },
         "info": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": Path(LOGS_DIR, "info.log"),
-            "maxBytes": 10485760,  # 1 MB
-            "backupCount": 10,
+            "class": "logging.StreamHandler",
+            "stream": sys.stdout,
             "formatter": "detailed",
             "level": logging.INFO,
         },
         "error": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "filename": Path(LOGS_DIR, "error.log"),
-            "maxBytes": 10485760,  # 1 MB
-            "backupCount": 10,
+            "class": "logging.StreamHandler",
+            "stream": sys.stdout,
             "formatter": "detailed",
             "level": logging.ERROR,
         },
