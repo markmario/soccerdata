@@ -198,8 +198,8 @@ class SeasonCode(Enum):
         def process_full_year_range(season: str) -> str:
             """Process a range of 4-digit strings like '1994-1995'."""
             if self == SeasonCode.MULTI_YEAR:
-                return season[2:4] + season[-2:]
-            return season[:4]
+                return season[-4:]
+            return season[-4:]
 
         def process_partial_year_range(season: str) -> str:
             """Process a range of 4-digit and 2-digit string like '1994-95'."""
