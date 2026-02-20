@@ -38,12 +38,6 @@ logging_config = {
         },
     },
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "stream": sys.stdout,
-            "formatter": "minimal",
-            "level": logging.DEBUG,
-        },
         "info": {
             "class": "logging.StreamHandler",
             "stream": sys.stdout,
@@ -59,7 +53,7 @@ logging_config = {
     },
     "loggers": {
         "root": {
-            "handlers": ["console", "info", "error"],
+            "handlers": ["info", "error"],
             "level": LOGLEVEL,
             "propagate": True,
         },
