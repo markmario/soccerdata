@@ -551,6 +551,7 @@ class WhoScoredMixin:
                 - 'loader': Returns a socceraction.data.opta.OptaLoader
                   instance, which can be used to retrieve the actual data.
                   See https://socceraction.readthedocs.io/en/latest/modules/generated/socceraction.data.opta.OptaLoader.html#socceraction.data.opta.OptaLoader
+                - 'true-raw': returns all unparsed data from WhoScored matchCentreData JSON
                 - None: Doesn't return any data. This is useful to just cache
                   the data without storing the events in memory.
         retry_missing : bool
@@ -652,6 +653,10 @@ class WhoScoredMixin:
                 raise
             reader.seek(0)
             json_data = json.load(reader)["matchCentreData"]
+
+            if output_fmt = 'true-raw':
+                return json_data
+
             if json_data is not None:
                 player_names.update(
                     {int(k): v for k, v in json_data["playerIdNameDictionary"].items()}
