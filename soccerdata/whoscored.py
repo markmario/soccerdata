@@ -654,7 +654,7 @@ class WhoScoredMixin:
             reader.seek(0)
             json_data = json.load(reader)["matchCentreData"]
 
-            if output_fmt = 'true-raw':
+            if output_fmt == 'true-raw':
                 return json_data
 
             if json_data is not None:
