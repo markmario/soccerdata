@@ -174,7 +174,7 @@ class SeasonCode(Enum):
                     return season
                 if season[2:] == "99":
                     return "9900"
-                return season[-2:] + f"{int(season[-2:]) + 1:02d}"
+                return season[-4:]
             if season == "1920":
                 return "1919"
             if season == "2021":
